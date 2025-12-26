@@ -1,7 +1,7 @@
 import telebot
 from telebot import types
 
-TOKEN = 'TOKEN'
+TOKEN = '8599434324:AAEAXifSsWzxT2uk1p4gTVKUWCwfhpxL1t8'
 bot = telebot.TeleBot(TOKEN)
 
 jobs_db = {
@@ -77,65 +77,58 @@ jobs_db = {
     ]
 }
 
+cat_list = list(jobs_db.keys())
+
 @bot.message_handler(commands=['start'])
 def start(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    item1 = types.KeyboardButton("Подобрать профессию")
-    item2 = types.KeyboardButton("О проекте")
-    markup.add(item1, item2)
-    
-    welcome = (f"Привет, {message.from_user.first_name}! \n\n"
-               "Я помогу тебе найти дело жизни среди 50 крутых направлений. "
-               "Выбирай нужный пункт в меню ниже!")
-    bot.send_message(message.chat.id, welcome, reply_markup=markup)
+    btn1 = types.KeyboardButton("Подобрать профессию")
+    btn2 = types.KeyboardButton("О проекте")
+    markup.add(btn1, btn2)
+    bot.send_message(message.chat.id, "Привет! Я твой гид по профессиям. Жми кнопку!", reply_markup=markup)
 
 @bot.message_handler(func=lambda m: m.text == "О проекте")
-def about_project(message):
-    about_text = (
-        "Этот бот - твой личный карьерный гид. Он умеет фильтровать 50 востребованных профессий. "
-        "Наш бот помогает подросткам и взрослым найти профессию по душе, не тратя годы на скучную рутину. "
-        "Давай искать твой путь вместе!"
-    )
-    bot.send_message(message.chat.id, about_text)
+def about(message):
+    text = ("Этот бот — твой личный карьерный гид! 🧭 Он умеет фильтровать 50 востребованных профессий "
+            "по 10 направлениям, выдавать описания задач и подсказывать путь развития. "
+            "Всё просто и без лишней воды")
+    bot.send_message(message.chat.id, text)
 
 @bot.message_handler(func=lambda m: m.text == "Подобрать профессию")
-def show_categories(message):
+def categories(message):
     markup = types.InlineKeyboardMarkup()
-    for category in jobs_db.keys():
-        markup.add(types.InlineKeyboardButton(text=category, callback_data=f"c:{category[:15]}"))
-    bot.send_message(message.chat.id, "Выбери сферу интересов:", reply_markup=markup)
+    for i, cat in enumerate(cat_list):
+        # Передаем индекс категории i вместо названия
+        markup.add(types.InlineKeyboardButton(text=cat, callback_data=f"c_{i}"))
+    bot.send_message(message.chat.id, "Выбери сферу:", reply_markup=markup)
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith('c:'))
+@bot.callback_query_handler(func=lambda call: call.data.startswith('c_'))
 def show_jobs(call):
-    search_cat = call.data[2:]
-    category = next((k for k in jobs_db.keys() if k.startswith(search_cat)), None)
+    cat_idx = int(call.data.split('_')[1])
+    category = cat_list[cat_idx]
+    jobs = jobs_db[category]
     
-    if category:
-        jobs = jobs_db[category]
-        markup = types.InlineKeyboardMarkup()
-        for job in jobs:
-            job_idx = jobs.index(job)
-            markup.add(types.InlineKeyboardButton(text=job['name'], callback_data=f"j:{search_cat}:{job_idx}"))
-        
-        markup.add(types.InlineKeyboardButton(text="Назад", callback_data="back"))
-        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, 
-                              text=f"Топ-5 профессий в сфере {category}:", reply_markup=markup)
+    markup = types.InlineKeyboardMarkup()
+    for j_idx, job in enumerate(jobs):
+        # Передаем индекс категории и индекс профессии
+        markup.add(types.InlineKeyboardButton(text=job['name'], callback_data=f"j_{cat_idx}_{j_idx}"))
+    
+    markup.add(types.InlineKeyboardButton(text="⬅️ Назад", callback_data="back"))
+    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, 
+                          text=f"Профессии в сфере {category}:", reply_markup=markup)
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith('j:'))
+@bot.callback_query_handler(func=lambda call: call.data.startswith('j_'))
 def show_details(call):
-    data_parts = call.data.split(':')
-    cat_part = data_parts[1]
-    idx = data_parts[2]
-    category = next((k for k in jobs_db.keys() if k.startswith(cat_part)), None)
+    _, c_idx, j_idx = call.data.split('_')
+    job = jobs_db[cat_list[int(c_idx)]][int(j_idx)]
     
-    if category:
-        job = jobs_db[category][int(idx)]
-        text = f"*{job['name']}*\n\n{job['desc']}"
-        bot.send_message(call.message.chat.id, text, parse_mode="Markdown")
+    text = f"✅ *{job['name']}*\n\n{job['desc']}"
+    bot.send_message(call.message.chat.id, text, parse_mode="Markdown")
 
 @bot.callback_query_handler(func=lambda call: call.data == "back")
-def back(call):
-    show_categories(call.message)
+def back_btn(call):
+    categories(call.message)
 
 if __name__ == "__main__":
+    print("123")
     bot.polling(none_stop=True)
