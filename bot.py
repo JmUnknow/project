@@ -1,7 +1,7 @@
 import telebot
 from telebot import types
 
-TOKEN = '8599434324:AAEAXifSsWzxT2uk1p4gTVKUWCwfhpxL1t8'
+TOKEN = 'TOKEN'
 bot = telebot.TeleBot(TOKEN)
 
 jobs_db = {
