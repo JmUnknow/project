@@ -1,11 +1,11 @@
 import telebot
 from telebot import types
 
-# Убедитесь, что этот токен актуален!
+
 TOKEN = 'token'
 bot = telebot.TeleBot(TOKEN)
 
-# База данных остается прежней
+
 jobs_db = {
     "IT & Разработка 💻": [
         {"name": "Frontend-разработчик 🎨", "desc": "Создает внешнюю часть сайтов, которую мы видим 👀."},
@@ -81,7 +81,6 @@ jobs_db = {
 
 cat_list = list(jobs_db.keys())
 
-# Главное меню (Reply Keyboard)
 @bot.message_handler(commands=['start'])
 def start(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -105,7 +104,6 @@ def about(message):
     )
     bot.send_message(message.chat.id, text)
 
-# Функция для создания инлайн-меню категорий
 def get_categories_markup():
     markup = types.InlineKeyboardMarkup()
     for i, cat in enumerate(cat_list):
@@ -124,7 +122,6 @@ def show_jobs(call):
 
     markup = types.InlineKeyboardMarkup()
     for j_idx, job in enumerate(jobs):
-        # Передаем индекс категории и индекс профессии
         markup.add(types.InlineKeyboardButton(text=job['name'], callback_data=f"j_{cat_idx}_{j_idx}"))
 
     markup.add(types.InlineKeyboardButton(text="⬅️ Назад к категориям", callback_data="back_to_cats"))
@@ -141,12 +138,9 @@ def show_details(call):
     _, c_idx, j_idx = call.data.split('_')
     job = jobs_db[cat_list[int(c_idx)]][int(j_idx)]
 
-    # Используем HTML вместо Markdown для надежности
     text = f"✨ <b>{job['name']}</b>\n\n{job['desc']}"
     
-    # Отправляем новое сообщение с описанием
     bot.send_message(call.message.chat.id, text, parse_mode="HTML")
-    # Подтверждаем callback, чтобы убрать "часики" на кнопке
     bot.answer_callback_query(call.id)
 
 @bot.callback_query_handler(func=lambda call: call.data == "back_to_cats")
