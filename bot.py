@@ -2,7 +2,7 @@ import telebot
 from telebot import types
 
 # Убедитесь, что этот токен актуален!
-TOKEN = ''
+TOKEN = 'token'
 bot = telebot.TeleBot(TOKEN)
 
 # База данных остается прежней
